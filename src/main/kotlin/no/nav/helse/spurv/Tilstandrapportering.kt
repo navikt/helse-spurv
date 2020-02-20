@@ -5,6 +5,7 @@ import no.nav.helse.spurv.Tilstandrapportering.TilstandType.TIL_INFOTRYGD
 import no.nav.helse.spurv.Tilstandrapportering.TilstandType.TIL_UTBETALING
 import org.slf4j.LoggerFactory
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 import java.util.*
 
@@ -56,19 +57,18 @@ internal class Tilstandrapportering(
             }
     }
 
-    private var lastReportTime = LocalDate.MIN
-    private fun lagRapport() {
-        val rapportdag = LocalDate.now()
-        val kl9 = LocalTime.of(9, 0, 0)
-        val igår = rapportdag.minusDays(1)
+    private var lastReportTime = LocalDateTime.MIN
+    private val schedule: (LocalDateTime) -> Boolean = ::hvert5Minutt
 
-        if (lastReportTime > igår) return
-        if (kl9 > LocalTime.now()) return
+    private fun lagRapport() {
+        val rapportdag = LocalDate.now().minusDays(1)
+
+        if (!schedule(lastReportTime)) return
 
         val rapport = vedtaksperioderapportDao.lagRapport(rapportdag)
 
         val (behandletIgår, resten) = rapport.map { (_, periode) -> periode }
-            .partition { (_, dato) -> dato == igår }
+            .partition { (_, dato) -> dato == rapportdag }
 
         val antallVedtaksperioderIgår = behandletIgår.size
         val sb = StringBuilder()
@@ -82,6 +82,16 @@ internal class Tilstandrapportering(
                 formater(sb, tilstand, antall)
             }
         sb.appendln()
+
+        aktivitetDao.lagRapport(rapportdag).takeIf(Map<*, *>::isNotEmpty)?.let {
+            sb.appendln("Årsaker til manuell behandling:")
+            it.forEach { melding, antall ->
+                sb.append(melding)
+                    .append(": ").
+                    appendln(antall)
+            }
+            sb.appendln()
+        }
 
         resten.map { TilstandType.valueOf(it.first) }.also {
             val ferdigBehandlet = it.filter { it in listOf(TIL_INFOTRYGD, TIL_UTBETALING) }
@@ -107,7 +117,19 @@ internal class Tilstandrapportering(
 
         slackClient?.postMessage(sb.toString(), ":man_in_business_suit_levitating:") ?: log.info("not alerting slack because URL is not set")
 
-        lastReportTime = LocalDate.now()
+        lastReportTime = LocalDateTime.now()
+    }
+
+    private fun hvert5Minutt(lastReportTime: LocalDateTime): Boolean {
+        return lastReportTime < LocalDateTime.now().minusMinutes(5)
+    }
+
+    private fun hverDagKl9(lastReportTime: LocalDateTime): Boolean {
+        val igår = LocalDate.now().minusDays(1)
+        if (lastReportTime.toLocalDate() > igår) return false
+        val kl9 = LocalTime.of(9, 0, 0)
+        if (kl9 > LocalTime.now()) return false
+        return true
     }
 
     private fun formater(sb: StringBuilder, tilstand: String, antall: Int) {

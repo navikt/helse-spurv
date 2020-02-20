@@ -73,7 +73,7 @@ internal class VedtaksperioderapportDaoTest {
     internal fun `i dag`() {
         val id = UUID.randomUUID()
         vedtaksperioderapportDao.leggInnVedtaksperiode(id, "SYKMELDING_MOTTATT", idag)
-        val rapport = vedtaksperioderapportDao.lagRapport(idag)
+        val rapport = vedtaksperioderapportDao.lagRapport(igår)
         assertTrue(rapport.isEmpty())
     }
 
@@ -81,7 +81,7 @@ internal class VedtaksperioderapportDaoTest {
     internal fun `i går`() {
         val id = UUID.randomUUID()
         vedtaksperioderapportDao.leggInnVedtaksperiode(id, "SYKMELDING_MOTTATT", igår)
-        val rapport = vedtaksperioderapportDao.lagRapport(idag)
+        val rapport = vedtaksperioderapportDao.lagRapport(igår)
         assertEquals("SYKMELDING_MOTTATT", rapport[id]?.first)
         assertEquals(igår, rapport[id]?.second)
     }
@@ -90,7 +90,7 @@ internal class VedtaksperioderapportDaoTest {
     internal fun `i forgårs`() {
         val id = UUID.randomUUID()
         vedtaksperioderapportDao.leggInnVedtaksperiode(id, "SYKMELDING_MOTTATT", iforgårs)
-        val rapport = vedtaksperioderapportDao.lagRapport(idag)
+        val rapport = vedtaksperioderapportDao.lagRapport(igår)
         assertEquals("SYKMELDING_MOTTATT", rapport[id]?.first)
         assertEquals(iforgårs, rapport[id]?.second)
     }
@@ -100,7 +100,7 @@ internal class VedtaksperioderapportDaoTest {
         val id = UUID.randomUUID()
         vedtaksperioderapportDao.leggInnVedtaksperiode(id, "AVVENTER_INNTEKTSMELDING", igår)
         vedtaksperioderapportDao.leggInnVedtaksperiode(id, "SYKMELDING_MOTTATT", iforgårs)
-        val rapport = vedtaksperioderapportDao.lagRapport(idag)
+        val rapport = vedtaksperioderapportDao.lagRapport(igår)
         assertEquals("AVVENTER_INNTEKTSMELDING", rapport[id]?.first)
         assertEquals(igår, rapport[id]?.second)
     }
@@ -110,7 +110,7 @@ internal class VedtaksperioderapportDaoTest {
         val id = UUID.randomUUID()
         vedtaksperioderapportDao.leggInnVedtaksperiode(id, "SYKMELDING_MOTTATT", igår)
         vedtaksperioderapportDao.leggInnVedtaksperiode(id, "AVVENTER_INNTEKTSMELDING", igår)
-        val rapport = vedtaksperioderapportDao.lagRapport(idag)
+        val rapport = vedtaksperioderapportDao.lagRapport(igår)
         assertEquals("AVVENTER_INNTEKTSMELDING", rapport[id]?.first)
         assertEquals(igår, rapport[id]?.second)
     }

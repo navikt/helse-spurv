@@ -11,6 +11,7 @@ fun main() {
 
     val dataSourceBuilder = DataSourceBuilder(env)
     dataSourceBuilder.migrate()
+    val dataSource = dataSourceBuilder.getDataSource()
 
     val slackClient = env["SLACK_WEBHOOK_URL"]?.let {
         SlackClient(
@@ -21,6 +22,6 @@ fun main() {
     }
 
     RapidApplication.create(env).apply {
-        Tilstandrapportering(this, VedtaksperioderapportDao(dataSourceBuilder.getDataSource()), slackClient)
+        Tilstandrapportering(this, VedtaksperioderapportDao(dataSource), AktivitetsloggerAktivitetDao(dataSource), slackClient)
     }.start()
 }

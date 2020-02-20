@@ -11,6 +11,7 @@ import java.util.*
 internal class Tilstandrapportering(
     rapidsConnection: RapidsConnection,
     private val vedtaksperioderapportDao: VedtaksperioderapportDao,
+    private val aktivitetDao: AktivitetsloggerAktivitetDao,
     private val slackClient: SlackClient?
 ) :
     River.PacketListener {
@@ -30,6 +31,7 @@ internal class Tilstandrapportering(
             validate { it.requireKey("gjeldendeTilstand") }
             validate { it.requireKey("endringstidspunkt") }
             validate { it.requireKey("på_grunn_av") }
+            validate { it.requireKey("aktivitetslogger.aktiviteter") }
             validate { it.requireKey("timeout") }
         }.register(this)
     }
@@ -41,7 +43,17 @@ internal class Tilstandrapportering(
             packet["endringstidspunkt"].asLocalDateTime().toLocalDate()
         )
 
+        leggInnErrormeldinger(packet)
+
         lagRapport()
+    }
+
+    private fun leggInnErrormeldinger(packet: JsonMessage) {
+        packet["aktivitetslogger.aktiviteter"].filter { "ERROR" == it.path("alvorlighetsgrad").asText() }
+            .mapNotNull { it["melding"]?.asText()?.takeIf(String::isNotEmpty) }
+            .forEach {
+                aktivitetDao.leggInnAktivitet(it, packet["endringstidspunkt"].asLocalDateTime().toLocalDate())
+            }
     }
 
     private var lastReportTime = LocalDate.MIN

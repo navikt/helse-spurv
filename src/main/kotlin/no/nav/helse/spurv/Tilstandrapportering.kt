@@ -5,7 +5,7 @@ import no.nav.helse.spurv.Tilstandrapportering.TilstandType.TIL_INFOTRYGD
 import no.nav.helse.spurv.Tilstandrapportering.TilstandType.TIL_UTBETALING
 import org.slf4j.LoggerFactory
 import java.time.LocalDate
-import java.time.LocalDateTime
+import java.time.LocalTime
 import java.util.*
 
 internal class Tilstandrapportering(
@@ -44,13 +44,14 @@ internal class Tilstandrapportering(
         lagRapport()
     }
 
-    private var lastReportTime = LocalDateTime.MIN
+    private var lastReportTime = LocalDate.MIN
     private fun lagRapport() {
-        val now = LocalDateTime.now()
-        if (lastReportTime > now.minusMinutes(1)) return
-
-        val rapportdag = LocalDate.now().plusDays(1)
+        val rapportdag = LocalDate.now()
+        val kl9 = LocalTime.of(9, 0, 0)
         val igår = rapportdag.minusDays(1)
+
+        if (lastReportTime > igår) return
+        if (kl9 > LocalTime.now()) return
 
         val rapport = vedtaksperioderapportDao.lagRapport(rapportdag)
 
@@ -94,7 +95,7 @@ internal class Tilstandrapportering(
 
         slackClient?.postMessage(sb.toString(), ":man_in_business_suit_levitating:") ?: log.info("not alerting slack because URL is not set")
 
-        lastReportTime = now
+        lastReportTime = LocalDate.now()
     }
 
     private fun formater(sb: StringBuilder, tilstand: String, antall: Int) {

@@ -58,10 +58,10 @@ internal class Tilstandrapportering(
     }
 
     private var lastReportTime = LocalDateTime.MIN
-    private val schedule: (LocalDateTime) -> Boolean = ::hvert5Minutt
+    private val schedule: (LocalDateTime) -> Boolean = ::hverDagEtterKl9
 
     private fun lagRapport() {
-        val rapportdag = LocalDate.now()
+        val rapportdag = LocalDate.now().minusDays(1)
 
         if (!schedule(lastReportTime)) return
 
@@ -124,7 +124,7 @@ internal class Tilstandrapportering(
         return lastReportTime < LocalDateTime.now().minusMinutes(5)
     }
 
-    private fun hverDagKl9(lastReportTime: LocalDateTime): Boolean {
+    private fun hverDagEtterKl9(lastReportTime: LocalDateTime): Boolean {
         val igår = LocalDate.now().minusDays(1)
         if (lastReportTime.toLocalDate() > igår) return false
         val kl9 = LocalTime.of(9, 0, 0)

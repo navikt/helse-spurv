@@ -1,14 +1,23 @@
 package no.nav.helse.spurv
 
 import no.nav.helse.rapids_rivers.*
+import no.nav.helse.spurv.Tilstandrapportering.TilstandType.TIL_INFOTRYGD
+import no.nav.helse.spurv.Tilstandrapportering.TilstandType.TIL_UTBETALING
+import org.slf4j.LoggerFactory
+import java.time.LocalDate
+import java.time.LocalDateTime
 import java.util.*
 
 internal class Tilstandrapportering(
     rapidsConnection: RapidsConnection,
     private val vedtaksperioderapportDao: VedtaksperioderapportDao,
-    slackClient: SlackClient?
+    private val slackClient: SlackClient?
 ) :
     River.PacketListener {
+
+    private companion object {
+        private val log = LoggerFactory.getLogger(Tilstandrapportering::class.java)
+    }
 
     init {
         River(rapidsConnection).apply {
@@ -31,7 +40,83 @@ internal class Tilstandrapportering(
             packet["gjeldendeTilstand"].asText(),
             packet["endringstidspunkt"].asLocalDateTime().toLocalDate()
         )
+
+        lagRapport()
+    }
+
+    private var lastReportTime = LocalDateTime.MIN
+    private fun lagRapport() {
+        val now = LocalDateTime.now()
+        if (lastReportTime > now.minusMinutes(1)) return
+
+        val rapportdag = LocalDate.now().plusDays(1)
+        val igår = rapportdag.minusDays(1)
+
+        val rapport = vedtaksperioderapportDao.lagRapport(rapportdag)
+
+        val (behandletIgår, resten) = rapport.map { (_, periode) -> periode }
+            .partition { (_, dato) -> dato == igår }
+
+        val antallVedtaksperioderIgår = behandletIgår.size
+        val sb = StringBuilder()
+        sb.append("I går behandlet vi ")
+            .append(antallVedtaksperioderIgår)
+            .appendln(" vedtaksperioder:")
+
+        behandletIgår.groupBy { it.first }
+            .mapValues { it.value.size }
+            .forEach { (tilstand, antall) ->
+                formater(sb, tilstand, antall)
+            }
+        sb.appendln()
+
+        resten.map { TilstandType.valueOf(it.first) }.also {
+            val ferdigBehandlet = it.filter { it in listOf(TIL_INFOTRYGD, TIL_UTBETALING) }
+            val tilInfotrygd = ferdigBehandlet.filter { it == TIL_INFOTRYGD }.size
+            val tilUtbetaling = ferdigBehandlet.filter { it == TIL_UTBETALING }.size
+            val tilGodkjenning = it.filter { it == TilstandType.AVVENTER_GODKJENNING }.size
+            val avventerBehandling = it.size - ferdigBehandlet.size - tilGodkjenning
+
+            sb.appendln("Frem til i går hadde vi behandlet ")
+                .append(resten.size)
+                .append(" andre saker, hvorav ")
+                .append(tilGodkjenning)
+                .append(" er til godkjenning, ")
+                .append(ferdigBehandlet.size)
+                .append(" er ferdig behandlet (")
+                .append(tilUtbetaling)
+                .append(" er utbetalt, ")
+                .append(tilInfotrygd)
+                .append(" er i Infotrygd), og ")
+                .append(avventerBehandling)
+                .appendln(" avventer videre behandling")
+        }
+
+        slackClient?.postMessage(sb.toString(), ":man_in_business_suit_levitating:") ?: log.info("not alerting slack because URL is not set")
+
+        lastReportTime = now
+    }
+
+    private fun formater(sb: StringBuilder, tilstand: String, antall: Int) {
+        sb.append(antall)
+            .append(" gikk til ")
+            .appendln(tilstand)
     }
 
     override fun onError(problems: MessageProblems, context: RapidsConnection.MessageContext) {}
+
+    private enum class TilstandType {
+        START,
+        MOTTATT_SYKMELDING,
+        AVVENTER_SØKNAD,
+        AVVENTER_TIDLIGERE_PERIODE_ELLER_INNTEKTSMELDING,
+        AVVENTER_TIDLIGERE_PERIODE,
+        UNDERSØKER_HISTORIKK,
+        AVVENTER_INNTEKTSMELDING,
+        AVVENTER_VILKÅRSPRØVING,
+        AVVENTER_HISTORIKK,
+        AVVENTER_GODKJENNING,
+        TIL_UTBETALING,
+        TIL_INFOTRYGD
+    }
 }

@@ -61,7 +61,7 @@ internal class Tilstandrapportering(
     private val schedule: (LocalDateTime) -> Boolean = ::hvert5Minutt
 
     private fun lagRapport() {
-        val rapportdag = LocalDate.now().minusDays(1)
+        val rapportdag = LocalDate.now()
 
         if (!schedule(lastReportTime)) return
 

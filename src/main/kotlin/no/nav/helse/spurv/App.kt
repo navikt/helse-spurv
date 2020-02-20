@@ -15,12 +15,12 @@ fun main() {
     val slackClient = env["SLACK_WEBHOOK_URL"]?.let {
         SlackClient(
             webhookUrl = it,
-            defaultChannel = "#team-bømlo",
+            defaultChannel = "#område-helse-rapportering",
             defaultUsername = "spurv"
         )
     }
 
     RapidApplication.create(env).apply {
-        // TODO
+        Tilstandrapportering(this, VedtaksperioderapportDao(dataSourceBuilder.getDataSource()), slackClient)
     }.start()
 }

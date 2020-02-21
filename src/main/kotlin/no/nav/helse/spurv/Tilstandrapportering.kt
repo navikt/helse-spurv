@@ -79,7 +79,7 @@ internal class Tilstandrapportering(
         behandletIgår.groupBy { it.first }
             .mapValues { it.value.size }
             .map { it.key to it.value }
-            .sortedBy { it.second }
+            .sortedByDescending { it.second }
             .forEach { (tilstand, antall) ->
                 formater(sb, tilstand, antall)
             }
@@ -88,7 +88,7 @@ internal class Tilstandrapportering(
         aktivitetDao.lagRapport(rapportdag).takeIf(Map<*, *>::isNotEmpty)?.let {
             sb.appendln("Årsaker til manuell behandling:")
             it.map { it.key to it.value }
-                .sortedBy { it.second }
+                .sortedByDescending { it.second }
                 .forEach { (melding, antall) ->
                     sb.append(melding)
                         .append(": ").

@@ -59,39 +59,40 @@ internal class AktivitetsloggerAktivitetDaoTest {
     internal fun `leggInnAktivitet`() {
         assertEquals(0, antall())
         val melding = "Støtter ikke gradert sykmelding"
-        aktivitetDao.leggInnAktivitet(melding, igår)
+        aktivitetDao.leggInnAktivitet("WARN", melding, igår)
         assertEquals(1, antall())
-        aktivitetDao.leggInnAktivitet(melding, igår)
+        aktivitetDao.leggInnAktivitet("WARN", melding, igår)
         assertEquals(2, antall())
     }
 
     @Test
     internal fun `lager rapport for i dag`() {
         val melding = "Støtter ikke gradert sykmelding"
-        aktivitetDao.leggInnAktivitet(melding, igår)
+        aktivitetDao.leggInnAktivitet("WARN", melding, igår)
         assertTrue(aktivitetDao.lagRapport(idag).isEmpty())
 
-        aktivitetDao.leggInnAktivitet(melding, idag)
+        aktivitetDao.leggInnAktivitet("WARN", melding, idag)
         assertTrue(aktivitetDao.lagRapport(idag).isNotEmpty())
     }
 
     @Test
     internal fun `teller forekomster av melding`() {
         "Støtter ikke gradert sykmelding".also {
-            aktivitetDao.leggInnAktivitet(it, igår)
-            aktivitetDao.leggInnAktivitet(it, igår)
-            aktivitetDao.leggInnAktivitet(it, idag)
+            aktivitetDao.leggInnAktivitet("WARN", it, igår)
+            aktivitetDao.leggInnAktivitet("WARN", it, igår)
+            aktivitetDao.leggInnAktivitet("WARN", it, idag)
         }
         "Her gikk det gale".also {
-            aktivitetDao.leggInnAktivitet(it, igår)
-            aktivitetDao.leggInnAktivitet(it, igår)
-            aktivitetDao.leggInnAktivitet(it, igår)
+            aktivitetDao.leggInnAktivitet("WARN", it, igår)
+            aktivitetDao.leggInnAktivitet("WARN", it, igår)
+            aktivitetDao.leggInnAktivitet("WARN", it, igår)
         }
         val rapport = aktivitetDao.lagRapport(igår)
 
-        assertEquals(2, rapport.size)
-        assertEquals(2, rapport["Støtter ikke gradert sykmelding"])
-        assertEquals(3, rapport["Her gikk det gale"])
+        assertEquals(1, rapport.size)
+        assertEquals(2, rapport.getValue("WARN").size)
+        assertEquals(2, rapport.getValue("WARN")["Støtter ikke gradert sykmelding"])
+        assertEquals(3, rapport.getValue("WARN")["Her gikk det gale"])
     }
 
     private fun antall() =

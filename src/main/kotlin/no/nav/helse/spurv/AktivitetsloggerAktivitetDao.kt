@@ -10,16 +10,23 @@ internal class AktivitetsloggerAktivitetDao(private val dataSource: DataSource) 
 
     fun lagRapport(dato: LocalDate) =
         using(sessionOf(dataSource)) {
-            it.run(queryOf("SELECT melding, COUNT(1) FROM aktivitetslogger_aktivitet WHERE dato = ? GROUP BY melding", dato).map {
-                it.string(1) to it.long(2)
-            }.asList)
-        }.associate { it }
+            it.run(
+                queryOf(
+                    "SELECT type, melding, COUNT(1) FROM aktivitetslogger_aktivitet WHERE dato = ? GROUP BY type, melding",
+                    dato
+                ).map {
+                    Triple(it.string(1), it.string(2), it.long(3))
+                }.asList
+            )
+        }.groupBy { it.first }
+            .mapValues { it.value.associate { it.second to it.third } }
 
-    fun leggInnAktivitet(melding: String, dato: LocalDate) =
+    fun leggInnAktivitet(type: String, melding: String, dato: LocalDate) =
         using(sessionOf(dataSource)) {
             it.run(
                 queryOf(
-                    "INSERT INTO  aktivitetslogger_aktivitet (melding, dato) VALUES (?, ?)",
+                    "INSERT INTO  aktivitetslogger_aktivitet (type, melding, dato) VALUES (?, ?, ?)",
+                    type,
                     melding,
                     dato
                 ).asExecute

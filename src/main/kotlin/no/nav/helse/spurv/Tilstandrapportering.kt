@@ -44,16 +44,25 @@ internal class Tilstandrapportering(
             packet["endringstidspunkt"].asLocalDateTime().toLocalDate()
         )
 
+        leggInnWarnmeldinger(packet)
         leggInnErrormeldinger(packet)
 
         lagRapport()
     }
 
+    private fun leggInnWarnmeldinger(packet: JsonMessage) {
+        leggInnMeldinger(packet, "WARN")
+    }
+
     private fun leggInnErrormeldinger(packet: JsonMessage) {
-        packet["aktivitetslogger.aktiviteter"].filter { "ERROR" == it.path("alvorlighetsgrad").asText() }
+        leggInnMeldinger(packet, "ERROR")
+    }
+
+    private fun leggInnMeldinger(packet: JsonMessage, type: String) {
+        packet["aktivitetslogger.aktiviteter"].filter { type == it.path("alvorlighetsgrad").asText() }
             .mapNotNull { it["melding"]?.asText()?.takeIf(String::isNotEmpty) }
             .forEach {
-                aktivitetDao.leggInnAktivitet(it, packet["endringstidspunkt"].asLocalDateTime().toLocalDate())
+                aktivitetDao.leggInnAktivitet(type, it, packet["endringstidspunkt"].asLocalDateTime().toLocalDate())
             }
     }
 
@@ -86,15 +95,8 @@ internal class Tilstandrapportering(
         sb.appendln()
 
         aktivitetDao.lagRapport(rapportdag).takeIf(Map<*, *>::isNotEmpty)?.let {
-            sb.appendln("Årsaker til manuell behandling:")
-            it.map { it.key to it.value }
-                .sortedByDescending { it.second }
-                .forEach { (melding, antall) ->
-                    sb.append(melding)
-                        .append(": ").
-                        appendln(antall)
-                }
-            sb.appendln()
+            appendMeldinger(sb, it["ERROR"], "Forekomster av feil/ting som ikke er støttet:")
+            appendMeldinger(sb, it["WARN"], "Forekomster av ting saksbehandler må vurdere:")
         }
 
         resten.map { TilstandType.valueOf(it.first) }.also {
@@ -104,7 +106,7 @@ internal class Tilstandrapportering(
             val tilGodkjenning = it.filter { it == TilstandType.AVVENTER_GODKJENNING }.size
             val avventerBehandling = it.size - ferdigBehandlet.size - tilGodkjenning
 
-            sb.appendln("Frem til i går hadde vi behandlet ")
+            sb.appendln("Frem til i går hadde vi ")
                 .append(resten.size)
                 .append(" andre saker, hvorav ")
                 .append(tilGodkjenning)
@@ -116,12 +118,24 @@ internal class Tilstandrapportering(
                 .append(tilInfotrygd)
                 .append(" er i Infotrygd), og ")
                 .append(avventerBehandling)
-                .appendln(" avventer videre behandling")
+                .appendln(" avventer flere dokumenter")
         }
 
         slackClient?.postMessage(sb.toString(), ":man_in_business_suit_levitating:") ?: log.info("not alerting slack because URL is not set")
 
         lastReportTime = LocalDateTime.now()
+    }
+
+    private fun appendMeldinger(sb: StringBuilder, meldinger: Map<String, Long>?, text: String) {
+        meldinger?.map { (melding, antall) -> melding to antall }
+            ?.sortedByDescending { it.second }
+            ?.also { sb.appendln(text) }
+            ?.forEach { (melding, antall) ->
+                sb.append(melding)
+                    .append(": ").
+                        appendln(antall)
+            }
+        sb.appendln()
     }
 
     private fun hvert5Minutt(lastReportTime: LocalDateTime): Boolean {

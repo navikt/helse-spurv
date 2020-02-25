@@ -81,7 +81,7 @@ internal class Tilstandrapportering(
 
         val antallVedtaksperioderIgår = behandletIgår.size
         val sb = StringBuilder()
-        sb.append("I går behandlet vi ")
+        sb.append("I går fikk vi ")
             .append(antallVedtaksperioderIgår)
             .appendln(" vedtaksperioder:")
 

@@ -32,7 +32,7 @@ internal class Tilstandrapportering(
             validate { it.requireKey("gjeldendeTilstand") }
             validate { it.requireKey("endringstidspunkt") }
             validate { it.requireKey("på_grunn_av") }
-            validate { it.requireKey("aktivitetslogger.aktiviteter") }
+            validate { it.requireKey("aktivitetslogg.aktiviteter") }
             validate { it.requireKey("timeout") }
         }.register(this)
     }
@@ -59,7 +59,7 @@ internal class Tilstandrapportering(
     }
 
     private fun leggInnMeldinger(packet: JsonMessage, type: String) {
-        packet["aktivitetslogger.aktiviteter"].filter { type == it.path("alvorlighetsgrad").asText() }
+        packet["aktivitetslogg.aktiviteter"].filter { type == it.path("alvorlighetsgrad").asText() }
             .mapNotNull { it["melding"]?.asText()?.takeIf(String::isNotEmpty) }
             .forEach {
                 aktivitetDao.leggInnAktivitet(type, it, packet["endringstidspunkt"].asLocalDateTime().toLocalDate())
@@ -112,13 +112,13 @@ internal class Tilstandrapportering(
                 .append(tilGodkjenning)
                 .append(" er til godkjenning, ")
                 .append(ferdigBehandlet.size)
-                .append(" er ferdig behandlet (")
+                .append(" er ferdig håndtert (")
                 .append(tilUtbetaling)
                 .append(" er utbetalt, ")
                 .append(tilInfotrygd)
-                .append(" er i Infotrygd), og ")
+                .append(" gikk til Infotrygd), og ")
                 .append(avventerBehandling)
-                .appendln(" avventer flere dokumenter")
+                .appendln(" perioder er avventende.")
         }
 
         slackClient?.postMessage(sb.toString(), ":man_in_business_suit_levitating:") ?: log.info("not alerting slack because URL is not set")

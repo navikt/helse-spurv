@@ -1,8 +1,7 @@
 package no.nav.helse.spurv
 
 import no.nav.helse.rapids_rivers.*
-import no.nav.helse.spurv.Tilstandrapportering.TilstandType.TIL_INFOTRYGD
-import no.nav.helse.spurv.Tilstandrapportering.TilstandType.TIL_UTBETALING
+import no.nav.helse.spurv.Tilstandrapportering.TilstandType.*
 import org.slf4j.LoggerFactory
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -100,10 +99,10 @@ internal class Tilstandrapportering(
         }
 
         resten.map { TilstandType.valueOf(it.first) }.also {
-            val ferdigBehandlet = it.filter { it in listOf(TIL_INFOTRYGD, TIL_UTBETALING) }
+            val ferdigBehandlet = it.filter { it in listOf(TIL_INFOTRYGD, AVSLUTTET) }
             val tilInfotrygd = ferdigBehandlet.filter { it == TIL_INFOTRYGD }.size
-            val tilUtbetaling = ferdigBehandlet.filter { it == TIL_UTBETALING }.size
-            val tilGodkjenning = it.filter { it == TilstandType.AVVENTER_GODKJENNING }.size
+            val tilUtbetaling = ferdigBehandlet.filter { it == AVSLUTTET }.size
+            val tilGodkjenning = it.filter { it == AVVENTER_GODKJENNING }.size
             val avventerBehandling = it.size - ferdigBehandlet.size - tilGodkjenning
 
             sb.appendln("Frem til i går hadde vi ")
@@ -170,6 +169,8 @@ internal class Tilstandrapportering(
         AVVENTER_HISTORIKK,
         AVVENTER_GODKJENNING,
         TIL_UTBETALING,
-        TIL_INFOTRYGD
+        TIL_INFOTRYGD,
+        AVSLUTTET,
+        UTBETALING_FEILET
     }
 }

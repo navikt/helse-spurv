@@ -1,16 +1,12 @@
 package no.nav.helse.spurv
 
-import io.ktor.util.KtorExperimentalAPI
 import no.nav.helse.rapids_rivers.RapidApplication
+import no.nav.helse.rapids_rivers.RapidsConnection
 
-@KtorExperimentalAPI
 fun main() {
-    val env = System.getenv().toMutableMap()
-    env.putIfAbsent("KAFKA_CONSUMER_GROUP_ID", "spurv-v1")
-    env.putIfAbsent("KAFKA_RAPID_TOPIC", "helse-rapid-v1")
+    val env = System.getenv()
 
     val dataSourceBuilder = DataSourceBuilder(env)
-    dataSourceBuilder.migrate()
     val dataSource = dataSourceBuilder.getDataSource()
 
     val slackClient = env["SLACK_WEBHOOK_URL"]?.let {
@@ -23,5 +19,11 @@ fun main() {
 
     RapidApplication.create(env).apply {
         Tilstandrapportering(this, VedtaksperioderapportDao(dataSource), AktivitetsloggerAktivitetDao(dataSource), slackClient)
+    }.apply {
+        register(object : RapidsConnection.StatusListener {
+            override fun onStartup(rapidsConnection: RapidsConnection) {
+                dataSourceBuilder.migrate()
+            }
+        })
     }.start()
 }

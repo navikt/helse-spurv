@@ -1,7 +1,7 @@
 Spurv [![Actions Status](https://github.com/navikt/helse-spurv/workflows/master/badge.svg)](https://github.com/navikt/helse-spurv/actions)
 =============
 
-Metrikker for sykepenger.
+Lager en daglig rapport av diverse nøkkeltall.
 
 # Henvendelser
 

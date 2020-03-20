@@ -17,7 +17,7 @@ fun main() {
         )
     }
 
-    RapidApplication.create(env) { _, rapid -> rapid.seekToBeginning() }.apply {
+    RapidApplication.create(env).apply {
         Tilstandrapportering(this, VedtaksperioderapportDao(dataSource), AktivitetsloggerAktivitetDao(dataSource))
         Tilstandrapport(this, VedtaksperioderapportDao(dataSource), AktivitetsloggerAktivitetDao(dataSource), slackClient)
     }.apply {

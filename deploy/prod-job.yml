@@ -38,6 +38,20 @@ spec:
                   value: spurv
                 - name: VAULT_MOUNTPATH
                   value: postgresql/prod-fss/
+                - name: HTTP_PROXY
+                  value: http://webproxy.nais:8088
+                - name: http_proxy
+                  value: http://webproxy.nais:8088
+                - name: HTTPS_PROXY
+                  value: http://webproxy.nais:8088
+                - name: https_proxy
+                  value: http://webproxy.nais:8088
+                - name: NO_PROXY
+                  value: localhost,127.0.0.1,10.254.0.1,.local,.adeo.no,.nav.no,.aetat.no,.devillo.no,.oera.no,.nais.io
+                - name: no_proxy
+                  value: localhost,127.0.0.1,10.254.0.1,.local,.adeo.no,.nav.no,.aetat.no,.devillo.no,.oera.no,.nais.io
+                - name: JAVA_PROXY_OPTIONS
+                  value: "-Dhttp.proxyHost=webproxy.nais -Dhttps.proxyHost=webproxy.nais -Dhttp.proxyPort=8088 -Dhttps.proxyPort=8088 -Dhttp.nonProxyHosts=localhost|127.0.0.1|10.254.0.1|*.local|*.adeo.no|*.nav.no|*.aetat.no|*.devillo.no|*.oera.no|*.nais.io"
           imagePullSecrets:
             - name: gpr-credentials
           initContainers:

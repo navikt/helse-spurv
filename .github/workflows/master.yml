@@ -48,7 +48,7 @@ jobs:
         APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
         CLUSTER: prod-fss
         ENVIRONMENT: prod-fss
-        RESOURCE: deploy/prod.yml
+        RESOURCE: deploy/prod.yml,deploy/prod-job.yml
         WAIT: false
         PRINT_PAYLOAD: true
         VAR: "image=${{env.IMAGE}},tag=${{env.TAG}},team=${{env.TEAM}},app=${{env.APP}}"

@@ -29,7 +29,7 @@ spec:
                 - name: VAULT_TOKEN_PATH
                   value: /var/run/secrets/nais.io/vault/vault_token
                 - name: CRON_JOB_MODE
-                  value: true
+                  value: "true"
                 - name: DATABASE_HOST
                   value: a01dbvl011.adeo.no
                 - name: DATABASE_PORT

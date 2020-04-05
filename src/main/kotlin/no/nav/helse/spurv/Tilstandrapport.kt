@@ -35,9 +35,9 @@ internal class Tilstandrapport(
         }
 
         resten.map(Pair<String, *>::first).also {
-            val ferdigBehandlet = it.filter { it in listOf("TIL_INFOTRYGD", "AVSLUTTET") }
+            val ferdigBehandlet = it.filter { it in listOf("TIL_INFOTRYGD", "AVSLUTTET", "AVSLUTTET_UTEN_UTBETALING", "AVSLUTTET_UTEN_UTBETALING_MED_INNTEKTSMELDING") }
             val tilInfotrygd = ferdigBehandlet.filter { it == "TIL_INFOTRYGD" }.size
-            val tilUtbetaling = ferdigBehandlet.filter { it == "AVSLUTTET" }.size
+            val avsluttet = ferdigBehandlet.filter { it in listOf("AVSLUTTET", "AVSLUTTET_UTEN_UTBETALING", "AVSLUTTET_UTEN_UTBETALING_MED_INNTEKTSMELDING") }.size
             val tilGodkjenning = it.filter { it == "AVVENTER_GODKJENNING" }.size
             val avventerBehandling = it.size - ferdigBehandlet.size - tilGodkjenning
 
@@ -48,8 +48,8 @@ internal class Tilstandrapport(
                 .append(" er til godkjenning, ")
                 .append(ferdigBehandlet.size)
                 .append(" er ferdig håndtert (")
-                .append(tilUtbetaling)
-                .append(" er utbetalt, ")
+                .append(avsluttet)
+                .append(" er avsluttet, ")
                 .append(tilInfotrygd)
                 .append(" gikk til Infotrygd), og ")
                 .append(avventerBehandling)

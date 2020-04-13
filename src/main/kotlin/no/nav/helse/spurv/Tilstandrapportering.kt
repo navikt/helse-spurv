@@ -23,7 +23,6 @@ internal class Tilstandrapportering(
             validate { it.requireKey("forrigeTilstand") }
             validate { it.requireKey("gjeldendeTilstand") }
             validate { it.requireKey("endringstidspunkt") }
-            validate { it.requireKey("på_grunn_av") }
             validate { it.requireKey("aktivitetslogg.aktiviteter") }
             validate { it.requireKey("timeout") }
         }.register(this)

@@ -43,8 +43,8 @@ internal class Tilstandrapport(
                 val avventerBehandling = it.size - ferdigBehandlet - tilGodkjenning
 
                 sb.appendln("Frem til i går hadde vi ")
-                    .append(resten.size)
-                    .append(" andre saker, hvorav ")
+                    .append(it.map { it.value }.sum())
+                    .append(" andre perioder, hvorav ")
                     .append(tilGodkjenning)
                     .append(" er til godkjenning, ")
                     .append(ferdigBehandlet)

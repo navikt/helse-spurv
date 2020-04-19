@@ -11,8 +11,7 @@ internal class Tilstandrapport(
     fun lagRapport(rapportdag: LocalDate) {
         val rapport = vedtaksperioderapportDao.lagRapport(rapportdag)
 
-        val (behandletIgår, resten) = rapport.map { (_, periode) -> periode }
-            .partition { (_, dato) -> dato == rapportdag }
+        val (behandletIgår, resten) = rapport.partition { (_, dato) -> dato == rapportdag }
 
         val antallVedtaksperioderIgår = behandletIgår.size
         val sb = StringBuilder()
@@ -20,9 +19,8 @@ internal class Tilstandrapport(
             .append(antallVedtaksperioderIgår)
             .appendln(" vedtaksperioder:")
 
-        behandletIgår.groupBy { it.first }
-            .mapValues { it.value.size }
-            .map { it.key to it.value }
+        behandletIgår
+            .map { it.first to it.third }
             .sortedByDescending { it.second }
             .forEach { (tilstand, antall) ->
                 formater(sb, tilstand, antall)
@@ -34,30 +32,36 @@ internal class Tilstandrapport(
             appendMeldinger(sb, it["WARN"], "Forekomster av ting saksbehandler må vurdere:")
         }
 
-        resten.map(Pair<String, *>::first).also {
-            val ferdigBehandlet = it.filter { it in listOf("TIL_INFOTRYGD", "AVSLUTTET", "AVSLUTTET_UTEN_UTBETALING", "AVSLUTTET_UTEN_UTBETALING_MED_INNTEKTSMELDING") }
-            val tilInfotrygd = ferdigBehandlet.filter { it == "TIL_INFOTRYGD" }.size
-            val avsluttet = ferdigBehandlet.filter { it in listOf("AVSLUTTET", "AVSLUTTET_UTEN_UTBETALING", "AVSLUTTET_UTEN_UTBETALING_MED_INNTEKTSMELDING") }.size
-            val tilGodkjenning = it.filter { it == "AVVENTER_GODKJENNING" }.size
-            val avventerBehandling = it.size - ferdigBehandlet.size - tilGodkjenning
+        resten
+            .groupBy({ it.first }) { it.third }
+            .mapValues { it.value.sum() }
+            .also {
+                val tilInfotrygd = it.antall("TIL_INFOTRYGD")
+                val avsluttet = it.antall("AVSLUTTET", "AVSLUTTET_UTEN_UTBETALING", "AVSLUTTET_UTEN_UTBETALING_MED_INNTEKTSMELDING")
+                val ferdigBehandlet = tilInfotrygd + avsluttet
+                val tilGodkjenning = it.antall("AVVENTER_GODKJENNING")
+                val avventerBehandling = it.size - ferdigBehandlet - tilGodkjenning
 
-            sb.appendln("Frem til i går hadde vi ")
-                .append(resten.size)
-                .append(" andre saker, hvorav ")
-                .append(tilGodkjenning)
-                .append(" er til godkjenning, ")
-                .append(ferdigBehandlet.size)
-                .append(" er ferdig håndtert (")
-                .append(avsluttet)
-                .append(" er avsluttet, ")
-                .append(tilInfotrygd)
-                .append(" gikk til Infotrygd), og ")
-                .append(avventerBehandling)
-                .appendln(" perioder er avventende.")
-        }
+                sb.appendln("Frem til i går hadde vi ")
+                    .append(resten.size)
+                    .append(" andre saker, hvorav ")
+                    .append(tilGodkjenning)
+                    .append(" er til godkjenning, ")
+                    .append(ferdigBehandlet)
+                    .append(" er ferdig håndtert (")
+                    .append(avsluttet)
+                    .append(" er avsluttet, ")
+                    .append(tilInfotrygd)
+                    .append(" gikk til Infotrygd), og ")
+                    .append(avventerBehandling)
+                    .appendln(" perioder er avventende.")
+            }
 
         slackClient.postMessage(sb.toString(), ":man_in_business_suit_levitating:")
     }
+
+    private fun Map<String, Int>.antall(vararg tilstand: String) =
+        this.filterKeys { it in tilstand }.map { it.value }.sum()
 
     private fun appendMeldinger(sb: StringBuilder, meldinger: Map<String, Long>?, text: String) {
         meldinger?.map { (melding, antall) -> melding to antall }

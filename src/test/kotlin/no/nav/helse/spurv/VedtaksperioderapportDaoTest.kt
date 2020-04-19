@@ -82,8 +82,9 @@ internal class VedtaksperioderapportDaoTest {
         val id = UUID.randomUUID()
         vedtaksperioderapportDao.leggInnVedtaksperiode(id, "SYKMELDING_MOTTATT", igår)
         val rapport = vedtaksperioderapportDao.lagRapport(igår)
-        assertEquals("SYKMELDING_MOTTATT", rapport[id]?.first)
-        assertEquals(igår, rapport[id]?.second)
+        assertEquals("SYKMELDING_MOTTATT", rapport.first().first)
+        assertEquals(igår, rapport.first().second)
+        assertEquals(1, rapport.first().third)
     }
 
     @Test
@@ -91,8 +92,9 @@ internal class VedtaksperioderapportDaoTest {
         val id = UUID.randomUUID()
         vedtaksperioderapportDao.leggInnVedtaksperiode(id, "SYKMELDING_MOTTATT", iforgårs)
         val rapport = vedtaksperioderapportDao.lagRapport(igår)
-        assertEquals("SYKMELDING_MOTTATT", rapport[id]?.first)
-        assertEquals(iforgårs, rapport[id]?.second)
+        assertEquals("SYKMELDING_MOTTATT", rapport.first().first)
+        assertEquals(iforgårs, rapport.first().second)
+        assertEquals(1, rapport.first().third)
     }
 
     @Test
@@ -101,8 +103,9 @@ internal class VedtaksperioderapportDaoTest {
         vedtaksperioderapportDao.leggInnVedtaksperiode(id, "AVVENTER_INNTEKTSMELDING", igår)
         vedtaksperioderapportDao.leggInnVedtaksperiode(id, "SYKMELDING_MOTTATT", iforgårs)
         val rapport = vedtaksperioderapportDao.lagRapport(igår)
-        assertEquals("AVVENTER_INNTEKTSMELDING", rapport[id]?.first)
-        assertEquals(igår, rapport[id]?.second)
+        assertEquals("AVVENTER_INNTEKTSMELDING", rapport.first().first)
+        assertEquals(igår, rapport.first().second)
+        assertEquals(1, rapport.first().third)
     }
 
     @Test
@@ -111,8 +114,9 @@ internal class VedtaksperioderapportDaoTest {
         vedtaksperioderapportDao.leggInnVedtaksperiode(id, "SYKMELDING_MOTTATT", igår)
         vedtaksperioderapportDao.leggInnVedtaksperiode(id, "AVVENTER_INNTEKTSMELDING", igår)
         val rapport = vedtaksperioderapportDao.lagRapport(igår)
-        assertEquals("AVVENTER_INNTEKTSMELDING", rapport[id]?.first)
-        assertEquals(igår, rapport[id]?.second)
+        assertEquals("AVVENTER_INNTEKTSMELDING", rapport.first().first)
+        assertEquals(igår, rapport.first().second)
+        assertEquals(1, rapport.first().third)
     }
 
     private fun antall() =

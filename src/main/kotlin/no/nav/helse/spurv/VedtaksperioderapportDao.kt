@@ -12,10 +12,14 @@ internal class VedtaksperioderapportDao(private val dataSource: DataSource) {
 
     fun lagRapport(dato: LocalDate) =
         using(sessionOf(dataSource)) {
-            it.run(queryOf("SELECT DISTINCT ON(vedtaksperiode_id) vedtaksperiode_id, tilstand, dato FROM vedtaksperiode_tilstand WHERE dato <= ?", dato).map {
-                UUID.fromString(it.string(1)) to (it.string(2) to it.localDate(3))
+            it.run(queryOf(
+                "SELECT tilstand, dato, COUNT(DISTINCT vedtaksperiode_id) " +
+                        "FROM vedtaksperiode_tilstand WHERE dato <= ? " +
+                        "GROUP BY tilstand, dato " +
+                        "ORDER BY tilstand, dato DESC", dato).map {
+                Triple(it.string(1), it.localDate(2), it.int(3))
             }.asList)
-        }.associate { it }
+        }
 
     fun leggInnVedtaksperiode(id: UUID, tilstand: String, dato: LocalDate) =
         using(sessionOf(dataSource)) {

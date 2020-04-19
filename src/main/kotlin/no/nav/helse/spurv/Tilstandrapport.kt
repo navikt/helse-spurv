@@ -13,9 +13,9 @@ internal class Tilstandrapport(
 
         val (behandletIgår, resten) = rapport.partition { (_, dato) -> dato == rapportdag }
 
-        val antallVedtaksperioderIgår = behandletIgår.size
+        val antallVedtaksperioderIgår = behandletIgår.sumBy { it.third }
         val sb = StringBuilder()
-        sb.append("I går fikk vi ")
+        sb.append("I går behandlet vi ")
             .append(antallVedtaksperioderIgår)
             .appendln(" vedtaksperioder:")
 

@@ -36,14 +36,15 @@ internal class Tilstandrapport(
             .groupBy({ it.first }) { it.third }
             .mapValues { it.value.sum() }
             .also {
+                val total = it.map { it.value }.sum()
                 val tilInfotrygd = it.antall("TIL_INFOTRYGD")
                 val avsluttet = it.antall("AVSLUTTET", "AVSLUTTET_UTEN_UTBETALING", "AVSLUTTET_UTEN_UTBETALING_MED_INNTEKTSMELDING")
                 val ferdigBehandlet = tilInfotrygd + avsluttet
                 val tilGodkjenning = it.antall("AVVENTER_GODKJENNING")
-                val avventerBehandling = it.size - ferdigBehandlet - tilGodkjenning
+                val avventerBehandling = total - ferdigBehandlet - tilGodkjenning
 
                 sb.appendln("Frem til i går hadde vi ")
-                    .append(it.map { it.value }.sum())
+                    .append(total)
                     .append(" andre perioder, hvorav ")
                     .append(tilGodkjenning)
                     .append(" er til godkjenning, ")

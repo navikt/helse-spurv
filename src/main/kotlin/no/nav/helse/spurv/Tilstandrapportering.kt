@@ -1,9 +1,8 @@
 package no.nav.helse.spurv
 
-import no.nav.helse.rapids_rivers.JsonMessage
-import no.nav.helse.rapids_rivers.RapidsConnection
-import no.nav.helse.rapids_rivers.River
-import no.nav.helse.rapids_rivers.asLocalDateTime
+import com.fasterxml.jackson.databind.JsonNode
+import no.nav.helse.rapids_rivers.*
+import org.slf4j.LoggerFactory
 import java.util.*
 
 internal class Tilstandrapportering(
@@ -13,26 +12,34 @@ internal class Tilstandrapportering(
 ) :
     River.PacketListener {
 
+    private companion object {
+        private val sikkerLogg = LoggerFactory.getLogger("tjenestekall")
+    }
+
     init {
         River(rapidsConnection).apply {
-            validate { it.requireValue("@event_name", "vedtaksperiode_endret") }
+            validate { it.demandValue("@event_name", "vedtaksperiode_endret") }
             validate { it.requireKey("aktørId") }
             validate { it.requireKey("fødselsnummer") }
             validate { it.requireKey("organisasjonsnummer") }
             validate { it.requireKey("vedtaksperiodeId") }
             validate { it.requireKey("forrigeTilstand") }
             validate { it.requireKey("gjeldendeTilstand") }
-            validate { it.requireKey("endringstidspunkt") }
+            validate { it.require("@opprettet", JsonNode::asLocalDateTime) }
             validate { it.requireKey("aktivitetslogg.aktiviteter") }
             validate { it.requireKey("timeout") }
         }.register(this)
+    }
+
+    override fun onError(problems: MessageProblems, context: RapidsConnection.MessageContext) {
+        sikkerLogg.error("kan ikke forstå vedtaksperiode_endret:\n${problems.toExtendedReport()}")
     }
 
     override fun onPacket(packet: JsonMessage, context: RapidsConnection.MessageContext) {
         vedtaksperioderapportDao.leggInnVedtaksperiode(
             UUID.fromString(packet["vedtaksperiodeId"].asText()),
             packet["gjeldendeTilstand"].asText(),
-            packet["endringstidspunkt"].asLocalDateTime().toLocalDate()
+            packet["@opprettet"].asLocalDateTime().toLocalDate()
         )
 
         leggInnWarnmeldinger(packet)
@@ -51,7 +58,7 @@ internal class Tilstandrapportering(
         packet["aktivitetslogg.aktiviteter"].filter { type == it.path("alvorlighetsgrad").asText() }
             .mapNotNull { it["melding"]?.asText()?.takeIf(String::isNotEmpty) }
             .forEach {
-                aktivitetDao.leggInnAktivitet(type, it, packet["endringstidspunkt"].asLocalDateTime().toLocalDate())
+                aktivitetDao.leggInnAktivitet(type, it, packet["@opprettet"].asLocalDateTime().toLocalDate())
             }
     }
 }

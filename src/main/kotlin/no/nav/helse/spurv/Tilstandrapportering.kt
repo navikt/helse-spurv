@@ -27,7 +27,6 @@ internal class Tilstandrapportering(
             validate { it.requireKey("gjeldendeTilstand") }
             validate { it.require("@opprettet", JsonNode::asLocalDateTime) }
             validate { it.requireKey("aktivitetslogg.aktiviteter") }
-            validate { it.requireKey("timeout") }
         }.register(this)
     }
 
